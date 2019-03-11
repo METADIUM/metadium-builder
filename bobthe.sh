@@ -10,10 +10,10 @@
 DEPOT_DIR=${HOME}
 
 if [ "$(uname -s)" = "Linux" ]; then
-    USERID="-u $(id -u):$(id -g)"
-    PASSWD_OPT="-u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro"
+    USERID="$(id -u):$(id -g)"
+    PASSWD_OPT="-u ${USERID} -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro"
 else
-    USERID="-u ${USER}"
+    USERID="${USER}"
     PASSWD_OPT=
 fi
 
