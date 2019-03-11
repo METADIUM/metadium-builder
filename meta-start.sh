@@ -8,28 +8,29 @@ function setup_user ()
         id $1 > /dev/null 2>&1;
         if [ ! $? = 0 ]; then
             if [ -d "/home/$1" ]; then
-                chown $1.$1 /home/$1
                 useradd -M -p "$1" "$1"
             else
                 useradd -m -p "$1" "$1"
             fi
-        elif [ ! -d "/home/$1" -o ! -d "/home/$1/.ssh" ]; then
+            chown $1.$1 /home/$1
+        fi
+        if [ ! -d "/home/$1" -o ! -d "/home/$1/.ssh" ]; then
             mkdir -p /home/$1
             (cd /etc/skel; tar -cf - .) | (cd /home/"$1"; tar -xf -)
         fi
-        if [ ! "$(/bin/ls -ld /home/sjung/.ssh > /dev/null  2>&1)" = "drwx------" ]; then
+        if [ ! "$(/bin/ls -ld /home/$1/.ssh > /dev/null  2>&1)" = "drwx------" ]; then
             chown $1.$1 /home/$1/
             chown -R $1.$1 /home/$1/.[a-zA-Z]*
             chmod 0700 /home/$1/.ssh
             chmod 0600 /home/$1/.ssh/authorized_keys /home/$1/.ssh/id_rsa.do-not@use
-            echo "sjung ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/1-users
+            echo "$1 ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/1-users
         fi
     else
         if [ ! -d "/home/$1" -o ! -d "/home/$1/.ssh" ]; then
             mkdir -p /home/$1
             (cd /etc/skel; tar -cf - .) | (cd /home/"$1"; tar -xf -)
         fi
-        if [ ! "$(/bin/ls -ld /home/sjung/.ssh > /dev/null  2>&1)" = "drwx------" ]; then
+        if [ ! "$(/bin/ls -ld /home/$1/.ssh > /dev/null  2>&1)" = "drwx------" ]; then
             chown $1.$1 /home/$1/
             chown -R $1.$1 /home/$1/.[a-zA-Z]*
             chmod 0700 /home/$1/.ssh

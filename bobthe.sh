@@ -61,7 +61,8 @@ case "$1" in
         -v ${DEPOT_DIR}/opt/${NAME}:/opt -v ${PWD}:/data \
         --hostname ${NAME} --name ${NAME} \
         -id metadium/bobthe:latest && \
-        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER}
+        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} && \
+        docker exec -it -u root ${NAME} service ssh start
     ;;
 "shell")
     [ $# -lt 2 ] && usage 1
