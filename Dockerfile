@@ -17,6 +17,7 @@ RUN /bin/bash -c '\
     chmod a+x /usr/local/bin/solc && \
     chmod a+x /usr/local/bin/meta-start.sh && \
     chmod a=rwx /home && chmod o+t /home && \
+    sed -i -e "s/^UsePAM yes/UsePAM no/" /etc/ssh/sshd_config && \
     /usr/local/bin/meta-start.sh setup-skel'
 
 ENTRYPOINT ["/usr/local/bin/meta-start.sh"]

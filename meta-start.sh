@@ -8,9 +8,9 @@ function setup_user ()
         id $1 > /dev/null 2>&1;
         if [ ! $? = 0 ]; then
             if [ -d "/home/$1" ]; then
-                useradd -M -p "$1" "$1"
+                useradd -M -s /bin/bash -p "$1" "$1"
             else
-                useradd -m -p "$1" "$1"
+                useradd -m -s /bin/bash -p "$1" "$1"
             fi
             chown $1.$1 /home/$1
         fi
