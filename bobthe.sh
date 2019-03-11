@@ -30,8 +30,8 @@ function die ()
 function get_opts ()
 {
     case $1 in
-    "fak*")
-        IX=$(printf "%d" ${1#fak})
+    fak[0-9]*)
+        IX=$(printf "%02d" ${1#fak})
         echo "-p 2${IX}22:22 -p 2${IX}88-2${IX}89:8588-8589 --ip 172.18.100.1${IX}"
         ;;
     *)
