@@ -7,7 +7,12 @@ function setup_user ()
     elif [ $(id -u) = 0 ]; then
         id $1 > /dev/null 2>&1;
         if [ ! $? = 0 ]; then
-            useradd -m -p "$1" "$1"
+            if [ -d "/home/$1" ]; then
+                chown $1.$1 /home/$1
+                useradd -M -p "$1" "$1"
+            else
+                useradd -m -p "$1" "$1"
+            fi
         elif [ ! -d "/home/$1" -o ! -d "/home/$1/.ssh" ]; then
             mkdir -p /home/$1
             (cd /etc/skel; tar -cf - .) | (cd /home/"$1"; tar -xf -)
