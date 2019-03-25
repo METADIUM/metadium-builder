@@ -42,7 +42,7 @@ function get_opts ()
 
 function usage ()
 {
-    echo "$(basename $0) new-network | launch <name> | shell <name>"
+    echo "$(basename $0) new-network | launch <name> | launch-host <name> [port] | shell <name>"
     [ "$1" = "1" ] && exit 1
 }
 
@@ -63,6 +63,22 @@ case "$1" in
         -id metadium/bobthe:latest && \
         docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} && \
         docker exec -it -u root ${NAME} service ssh start
+    ;;
+"launch-host")
+    [ $# -lt 2 ] && usage 1
+    [ $# -gt 2 ] && PORT=$3
+    NAME=$2
+    docker run ${PASSWD_OPT} --network host ${OPTS} \
+        -v ${DEPOT_DIR}/src:/home/${USER}/src \
+        -v ${DEPOT_DIR}/opt/${NAME}:/opt -v ${PWD}:/data \
+        --hostname ${NAME} --name ${NAME} \
+        -id metadium/bobthe:latest && \
+        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} && \
+        docker exec -it -u root ${NAME} /bin/bash -c 'echo "127.0.0.1 '${NAME}'" >> /etc/hosts'
+    if [ ! "$PORT" = "" ]; then
+        docker exec -it -u root ${NAME} /bin/sed -ie 's/^#Port 22/Port '$(($PORT-1))'/' /etc/ssh/sshd_config && \
+            docker exec -it -u root ${NAME} service ssh start
+    fi
     ;;
 "shell")
     [ $# -lt 2 ] && usage 1
