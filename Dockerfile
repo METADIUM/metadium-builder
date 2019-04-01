@@ -11,9 +11,10 @@ RUN /bin/bash -c '\
     cd /usr/local/bin/ && \
     ln -sf ../go/bin/* . && \
     popd && \
+    rm /tmp/go.tar.gz && \
     curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
     apt-get install -y nodejs && \
-    curl -sL -o /usr/local/bin/solc https://github.com/ethereum/solidity/\releases/download/v0.4.24/solc-static-linux && \
+    curl -sL -o /usr/local/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux && \
     chmod a+x /usr/local/bin/solc && \
     chmod a+x /usr/local/bin/meta-start.sh && \
     chmod a=rwx /home && chmod o+t /home && \
