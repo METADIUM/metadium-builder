@@ -234,7 +234,7 @@ function setup_cluster ()
 
     # initialize governance
     echo "initializing governance"
-    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet.sh init-gov meta /opt/meta/config.json /opt/meta/keystore/account-01 || die "Governance initialization failed"
+    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach http://localhost:8588 --preload "/opt/meta/conf/MetadiumGovernance.js,/opt/meta/conf/deploy-governance.js" --exec 'GovernanceDeployer.deploy("/opt/meta/keystore/account-01", "password", "/opt/meta/config.json")' || die "Governance initialization failed"
 
     # run admin.etcdInit() if governance is initialized
     echo -n "initializing etcd..."
