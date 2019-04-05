@@ -53,18 +53,18 @@ function prep_keys ()
     [ "$count" = "" -o "$count" -lt 0 ] && die "Invalid count $count"
     [ -d "${dir}/keystore" ] || mkdir -p "${dir}/keystore"
 
-    docker exec -it -u ${USERID} ${name} bash -c "echo password > /tmp/junk"
+    docker exec -u ${USERID} ${name} bash -c "echo password > /tmp/junk"
     for i in $(seq 1 $((${count} + 2))); do
 	nn=$(printf "nodekey-%02d" $i)
 	kn=$(printf "account-%02d" $i)
 	if [ ! -f "${dir}/keystore/${nn}" -a $i -le $count ]; then
-	    docker exec -it -u ${USERID} ${name} /opt/meta/bin/gmet metadium new-nodekey --out "/opt/meta/keystore/${nn}" || die "Cannot create a new nodekey ${nn}"
+	    docker exec -u ${USERID} ${name} /opt/meta/bin/gmet metadium new-nodekey --out "/opt/meta/keystore/${nn}" || die "Cannot create a new nodekey ${nn}"
 	fi
 	if [ ! -f "${dir}/keystore/${kn}" ]; then
-	    docker exec -it -u ${USERID} ${name} /opt/meta/bin/gmet metadium new-account --password /tmp/junk --out "/opt/meta/keystore/${kn}" || die "Cannot create a new account ${kn}"
+	    docker exec -u ${USERID} ${name} /opt/meta/bin/gmet metadium new-account --password /tmp/junk --out "/opt/meta/keystore/${kn}" || die "Cannot create a new account ${kn}"
 	fi
     done
-    docker exec -it -u ${USERID} ${name} /bin/rm /tmp/junk
+    docker exec -u ${USERID} ${name} /bin/rm /tmp/junk
 }
 
 # string get_address(string file_name)
@@ -175,7 +175,7 @@ function setup_cluster_old ()
 	local kn=${ddir}/keystore/account-$(printf "%02d" $i)
 	local addr=$(get_address $kn)
 	[ $? = 0 ] || die "Cannot get the address of $kn"
-	local id=$(docker exec -it -u ${USERID} ${name} /opt/meta/bin/gmet metadium nodeid /opt/meta/geth/nodekey | awk '/^idv5/ {id=$2; gsub("\r","",id); gsub("\n","",id); print id}')
+	local id=$(docker exec -u ${USERID} ${name} /opt/meta/bin/gmet metadium nodeid /opt/meta/geth/nodekey | awk '/^idv5/ {id=$2; gsub("\r","",id); gsub("\n","",id); print id}')
 	[ $? = 0 ] || die "Cannot get the node id of $nn"
 	local ip=$(get_docker_ip $name) || die "Cannot get the IP address of $name"
 	[ $? = 0 ] || die "Cannot get IP address of $name"
@@ -218,24 +218,24 @@ function setup_cluster_old ()
     # stop and wipe data
     echo -n "stop and wiping data..."
     for i in $(seq $node_index $node_last); do
-	docker exec -it -u ${USERID} ${node_prefix}${i} bash -c '/opt/meta/bin/gmet.sh stop; /opt/meta/bin/gmet.sh wipe;'
+	docker exec -u ${USERID} ${node_prefix}${i} bash -c '/opt/meta/bin/gmet.sh stop; /opt/meta/bin/gmet.sh wipe;'
     done
     echo "done."
 
     # start gmet in the first instance
     echo "initializing gmet in ${node_prefix}${node_index}..."
-    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet.sh init meta /opt/meta/config.json || die "Init failed"
+    docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet.sh init meta /opt/meta/config.json || die "Init failed"
 
     echo "starting gmet in ${node_prefix}${node_index}..."
-    docker exec -it -u ${USERID} ${node_prefix}${node_index} /usr/bin/nohup /opt/meta/bin/gmet.sh start > /dev/null 2>&1
+    docker exec -u ${USERID} ${node_prefix}${node_index} /usr/bin/nohup /opt/meta/bin/gmet.sh start > /dev/null 2>&1
 
     echo "giving gmet 3 seconds to start..."
     sleep 3
 
     # initialize governance
     echo "initializing governance"
-#    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach http://localhost:8588 --preload "/opt/meta/conf/MetadiumGovernance.js,/opt/meta/conf/deploy-governance.js" --exec 'GovernanceDeployer.deploy("/opt/meta/keystore/account-01", "password", "/opt/meta/config.json")' || die "Governance initialization failed"
-    docker exec -it -u ${USERID} ${node_prefix}${node_index}		\
+#    docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach http://localhost:8588 --preload "/opt/meta/conf/MetadiumGovernance.js,/opt/meta/conf/deploy-governance.js" --exec 'GovernanceDeployer.deploy("/opt/meta/keystore/account-01", "password", "/opt/meta/config.json")' || die "Governance initialization failed"
+    docker exec -u ${USERID} ${node_prefix}${node_index}		\
 	/bin/bash -c 'echo password > /tmp/junk &&			\
 /opt/meta/bin/gmet metadium deploy-governance --gas 0xF000000		\
     --gasprice 80000000000 --url http://localhost:8588			\
@@ -245,7 +245,7 @@ function setup_cluster_old ()
 
     # run admin.etcdInit() if governance is initialized
     echo -n "initializing etcd..."
-    out=$(docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { for (var i=0; i<120; i++) { if (admin.metadiumInfo && admin.metadiumInfo.self) { admin.etcdInit(); return true; } else { admin.sleep(1) } } return false; })()')
+    out=$(docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { for (var i=0; i<120; i++) { if (admin.metadiumInfo && admin.metadiumInfo.self) { admin.etcdInit(); return true; } else { admin.sleep(1) } } return false; })()')
     [ "${out%true}" = "$out" ] || die "admin.etcdInit() seemed failed: ${out}".
     echo "done."
 
@@ -270,7 +270,7 @@ function setup_cluster_old ()
 	else
 	    local name=${node_prefix}${node_index}
 	    local nn=${ddir}/geth/nodekey
-	    local id=$(docker exec -it -u ${USERID} ${name} /opt/meta/bin/gmet metadium nodeid /opt/meta/geth/nodekey | awk '/^idv5/ {id=$2; gsub("\r","",id); gsub("\n","",id); print id}')
+	    local id=$(docker exec -u ${USERID} ${name} /opt/meta/bin/gmet metadium nodeid /opt/meta/geth/nodekey | awk '/^idv5/ {id=$2; gsub("\r","",id); gsub("\n","",id); print id}')
 	    [ $? = 0 ] || die "Cannot get the node id of $nn"
 	    local ip=$(get_docker_ip $name) || die "Cannot get the IP address of $name"
 	    [ $? = 0 ] || die "Cannot get IP address of $name"
@@ -282,14 +282,14 @@ DISCOVER=1" > ${ddir}/.rc
 
 	# start
 	echo -n "starting gmet in ${node_prefix}${ix}..."
-	docker exec -it -u ${USERID} ${node_prefix}${ix} /usr/bin/nohup /opt/meta/bin/gmet.sh start > /dev/null 2>&1 || die "Cannot start gmet in ${node_prefix}${ix}"
+	docker exec -u ${USERID} ${node_prefix}${ix} /usr/bin/nohup /opt/meta/bin/gmet.sh start > /dev/null 2>&1 || die "Cannot start gmet in ${node_prefix}${ix}"
 	echo "done."
     done
 
     # make sure all the miners are up and running
     echo "checking if all the miners are up and running (will take a few minutes)..."
-    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { var etcdcnt=0; for (var i=0; i <= 300; i++) { if (etcdcnt != admin.metadiumInfo.etcd.members.length) { console.log("  miners=" + admin.metadiumInfo.nodes.length + " vs. etcd-connected=" + (etcdcnt=admin.metadiumInfo.etcd.members.length)); } if (admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length) return true; else admin.sleep(1); } return false; })()'
-    out=$(docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec 'admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length')
+    docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { var etcdcnt=0; for (var i=0; i <= 300; i++) { if (etcdcnt != admin.metadiumInfo.etcd.members.length) { console.log("  miners=" + admin.metadiumInfo.nodes.length + " vs. etcd-connected=" + (etcdcnt=admin.metadiumInfo.etcd.members.length)); } if (admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length) return true; else admin.sleep(1); } return false; })()'
+    out=$(docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec 'admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length')
     [ "${out/true}" = "${out}" ] && die "Metadium network might not be up: ${out}"
 
     echo "All is good."
@@ -500,7 +500,7 @@ DISCOVER=1" > ${ddir}/.rc
 
     # initialize governance
     echo "initializing governance"
-#    docker exec -it -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach http://localhost:8588 --preload "/opt/meta/conf/MetadiumGovernance.js,/opt/meta/conf/deploy-governance.js" --exec 'GovernanceDeployer.deploy("/opt/meta/keystore/account-01", "password", "/opt/meta/config.json")' || die "Governance initialization failed"
+#    docker exec -u ${USERID} ${node_prefix}${node_index} /opt/meta/bin/gmet attach http://localhost:8588 --preload "/opt/meta/conf/MetadiumGovernance.js,/opt/meta/conf/deploy-governance.js" --exec 'GovernanceDeployer.deploy("/opt/meta/keystore/account-01", "password", "/opt/meta/config.json")' || die "Governance initialization failed"
     /opt/meta/bin/gmet metadium deploy-governance --gas 0xF000000	 \
 	--gasprice 80000000000 --url http://localhost:8588		 \
 	--password <(echo password) /opt/meta/conf/MetadiumGovernance.js \

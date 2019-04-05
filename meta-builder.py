@@ -213,7 +213,7 @@ def do_init_test(tar_file):
         # wait until gmet is up
         log("waiting for gmet in the first node to come up...\n")
         for i in range(0, 301):
-            args = [ "docker", "exec", "-it", first_node, "curl", "-s", "http://localhost:8588" ]
+            args = [ "docker", "exec", first_node, "curl", "-s", "http://localhost:8588" ]
             (rc, out) = cmd_run_tee(args)
             if rc == 0:
                 break
@@ -223,7 +223,7 @@ def do_init_test(tar_file):
 
         # wait until system is ready
         log("waiting for all the miners to be up and running...\n")
-        base_args = [ "docker", "exec", "-it", first_node, "/opt/meta/bin/gmet",
+        base_args = [ "docker", "exec", first_node, "/opt/meta/bin/gmet",
                       "attach", "ipc:/opt/meta/geth.ipc", "--preload",
                       "/data/rc.js", "--exec" ]
         args = base_args + [ """check_all_miners(300)""" ]
@@ -292,7 +292,7 @@ def do_perf_test(tar_file):
         # wait until gmet is up
         log("waiting for gmet in the first node to come up...\n")
         for i in range(0, 301):
-            args = [ "docker", "exec", "-it", first_node, "curl", "-s", "http://localhost:8588" ]
+            args = [ "docker", "exec", first_node, "curl", "-s", "http://localhost:8588" ]
             (rc, out) = cmd_run_tee(args)
             if rc == 0:
                 break
@@ -302,7 +302,7 @@ def do_perf_test(tar_file):
 
         # wait until system is ready
         log("waiting for all the miners to be up and running...\n")
-        base_args = [ "docker", "exec", "-it", first_node, "/opt/meta/bin/gmet",
+        base_args = [ "docker", "exec", first_node, "/opt/meta/bin/gmet",
                       "attach", "ipc:/opt/meta/geth.ipc", "--preload",
                       "/data/rc.js", "--exec" ]
         args = base_args + [ """check_all_miners(300)""" ]
