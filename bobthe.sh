@@ -364,6 +364,7 @@ function setup_inner_cluster ()
 	echo "setting up ${dir} directory..."
 	sudo chown $(id -u):$(id -g) ${dir}
 	mkdir -p ${dir}/geth ${dir}/logs
+	ln -sf /data/rc.js ${dir}/
 	(cd ${dir}; tar xfz ${tar_file}) || die "Cannot untar ${tar_file} in ${dir}"
     done
 
@@ -456,6 +457,7 @@ function setup_inner_cluster ()
 
     # start gmet in the first instance
     echo "initializing gmet in ${node_prefix}${node_index}..."
+    [ -d /data/.ethash ] && cp -r /data/.ethash /opt/meta/
     /opt/meta/bin/gmet.sh init meta /opt/meta/config.json || die "Init failed"
 
     # prepare gmet in the other instances
@@ -507,13 +509,16 @@ DISCOVER=1" > ${ddir}/.rc
 
     # run admin.etcdInit() if governance is initialized
     echo "initializing etcd..."
-    out=$(/opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { for (var i=0; i<120; i++) { if (admin.metadiumInfo && admin.metadiumInfo.self) { if (admin.metadiumInfo.etcd && admin.metadiumInfo.etcd.self) return true; try { admin.etcdInit() } catch (e) { console.log(e); admin.sleep(1); continue; } return true; } else { admin.sleep(1) } } return false; })()')
-    [ "${out#true}" = "${out}" ] && die "admin.etcdInit() seemed failed: ${out}"
+    /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --preload /data/rc.js \
+	--exec "init_etcd(120)" 2>&1 | tee /tmp/junk
+    out=$(cat /tmp/junk)
+    [ "${out/true}" = "${out}" ] && die "admin.etcdInit() failed: ${out}"
 
     # make sure all the miners are up and running
     echo "checking if all the miners are up and running (will take a few minutes)..."
-    /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec '(function() { var etcdcnt=0; for (var i=0; i <= 300; i++) { if (etcdcnt != admin.metadiumInfo.etcd.members.length) { console.log("  miners=" + admin.metadiumInfo.nodes.length + " vs. etcd-connected=" + (etcdcnt=admin.metadiumInfo.etcd.members.length)); } if (admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length) return true; else admin.sleep(1); } return false; })()'
-    out=$(/opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --exec 'admin.metadiumInfo.etcd.members.length == admin.metadiumInfo.nodes.length')
+    /opt/meta/bin/gmet attach ipc:/opt/meta/geth.ipc --preload /data/rc.js \
+	--exec "check_all_miners(300)" | tee /tmp/junk
+    out=$(cat /tmp/junk)
     [ "${out/true}" = "${out}" ] && die "Metadium network might not be up: ${out}"
 
     echo "All is good."
@@ -637,6 +642,9 @@ function setup_cluster ()
     local node_last
     local tar_file=
 
+    docker network inspect bobthe > /dev/null 2>&1 || $0 new-network || \
+	die "Cannot create bobthe network"
+
     set -- $args
     for i; do
 	case "$i" in
@@ -671,10 +679,11 @@ function setup_cluster ()
 
     [ $(($ip_start + $node_index + $node_count - 1)) -gt 254 ] && die "Last node index ($(($node_index + $node_count - 1))) is too high as IP address base is ${ip_prefix}${ip_start}"
 
-
     [ -d "${dir}" ] || mkdir -p "${dir}" || die "Cannot create ${dir}"
     cp $0 ${dir}/
+    [ -f "$(dirname $0)/rc.js" ] && cp $(dirname $0)/rc.js ${dir}
     cp ${tar_file} ${dir}/
+    [ -d "$(dirname $0)/.ethash" ] && cp -r $(dirname $0)/.ethash ${dir}/
 
     # create docker-compose.yml
     fn=${dir}/docker-compose.yml
