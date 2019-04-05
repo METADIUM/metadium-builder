@@ -61,6 +61,7 @@ def log(*args):
 def die(en, *args):
     for i in args:
         sys.stderr.write(i)
+    sys.stderr.write("\n")
     exit(en)
 
 # [ int returncode, char *out, char *err ] cmd_run(list cmd, char *in=None)
@@ -99,7 +100,20 @@ def strtime():
 
 # db stuff
 
+def db_locked():
+    try:
+        fn = os.path.join(top_dir, lock_name)
+        (rc, out, err) = cmd_run([ "lsof", fn ])
+        if rc == 0 and out.find("W ") > 0:
+            return True
+        else:
+            return False
+    except:
+        return True
+
 def db_lock():
+    if db_locked():
+        return None
     try:
         f = open(os.path.join(top_dir, lock_name), "w")
         fcntl.lockf(f, fcntl.LOCK_EX)
@@ -387,12 +401,12 @@ def check_and_build(dir, repository, branch):
         die(1, "Cannot get the latest commit of {repository} {branch}".
             format(repository=repository, branch=branch))
     elif latest_commit == last_commit:
-        die(0, "No update on {repository} {branch}. Commit is {commit}\n".
+        die(0, "No update on {repository} {branch}. Commit is {commit}".
             format(repository=repository, branch=branch, commit=latest_commit))
 
     # setup log file, and redirect stdout and stderr
     try:
-        logname = os.path.join("logs/build.{id}.log".format(id=build_id))
+        logname = os.path.join(top_dir, "logs/build.{id}.log".format(id=build_id))
         print "switching to log file. 'tail -F {logname}' to follow...".format(logname=logname)
         logf = open(logname, "w", 0)
         lnk = os.path.join(top_dir, "log")
@@ -401,8 +415,9 @@ def check_and_build(dir, repository, branch):
         os.symlink(logname, lnk)
         sys.stdout = logf
         sys.stderr = logf
-    except AttributeError, e:
-        print e
+    except IOError, e:
+        die(1, "Cannot create log file {dir}/logs/build.{id}.log: {err}".
+            format(dir=top_dir, id=build_id, err=e)
     except:
         die(1, "Cannot create log file {dir}/logs/build.{id}.log: {err}".
             format(dir=top_dir, id=build_id, err=sys.exc_info()[0]))
