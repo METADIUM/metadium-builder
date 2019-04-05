@@ -417,7 +417,7 @@ def check_and_build(dir, repository, branch):
         sys.stderr = logf
     except IOError, e:
         die(1, "Cannot create log file {dir}/logs/build.{id}.log: {err}".
-            format(dir=top_dir, id=build_id, err=e)
+            format(dir=top_dir, id=build_id, err=e))
     except:
         die(1, "Cannot create log file {dir}/logs/build.{id}.log: {err}".
             format(dir=top_dir, id=build_id, err=sys.exc_info()[0]))
