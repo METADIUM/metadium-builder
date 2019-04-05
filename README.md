@@ -73,8 +73,8 @@ Logs go to `<dir>/logs/log.<build-number>`, which is `symlink`'ed to `<dir>/log`
 To run it regularly, set up `crontab` something like the following
 
     $ crontab -e
-    0,10,20,30,40,50 * * * * PATH=/sbin:$PATH /data/meta-build/bin/meta-builder.py build /data/meta-build github.com:/metadium/go-metadium master
-    5,15,25,35,45,55 * * * * PATH=/sbin:$PATH /data/meta-build/bin/meta-builder.py build /data/meta-build github.com:/metadium/go-metadium <other-branch>
+    0,10,20,30,40,50 * * * * PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin /data/meta-build/bin/meta-builder.py build /data/meta-build github.com:/metadium/go-metadium master
+    5,15,25,35,45,55 * * * * PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin /data/meta-build/bin/meta-builder.py build /data/meta-build github.com:/metadium/go-metadium <other-branch>
 
 Only one session is allowed to run at any given time.
 
