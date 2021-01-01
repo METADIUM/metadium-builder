@@ -7,10 +7,11 @@ function setup_user ()
     elif [ $(id -u) = 0 ]; then
         id $1 > /dev/null 2>&1;
         if [ ! $? = 0 ]; then
+            [ "$2" = "" ] || U_ID="-u $2"
             if [ -d "/home/$1" ]; then
-                useradd -M -s /bin/bash -p "$1" "$1"
+                useradd -M -s /bin/bash ${U_ID} -p "$1" "$1"
             else
-                useradd -m -s /bin/bash -p "$1" "$1"
+                useradd -m -s /bin/bash ${U_ID} -p "$1" "$1"
             fi
             chown $1.$1 /home/$1
         fi
@@ -61,11 +62,11 @@ fi
     fi
     ;;
 "setup-user")   # internal command
-    if [ ! $# = 2 ]; then
+    if [ $# -lt 2 ]; then
         echo "Usage: meta-start.sh setup-user <user>"
         exit 1
     fi
-    setup_user $2
+    setup_user $2 $3
     ;;
 "build-image")
     docker build -t metadium/bobthe:0.4 .

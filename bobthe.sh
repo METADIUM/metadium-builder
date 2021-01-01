@@ -5,10 +5,12 @@
 # 2. ${HOME}/opt/<name> -> /opt
 # 3. ${PWD}             -> /data
 
+[ "${IMAGE}" = "" ] && IMAGE=metadium/bobthe:latest
+[ "${USE_HOST_PASSWD}" = "" ] && USE_HOST_PASSWD=0
 
 DEPOT_DIR=${HOME}
 
-if [ "$(uname -s)" = "Linux" ]; then
+if [ "$USE_HOST_PASSWD" = "1" -a "$(uname -s)" = "Linux" ]; then
     USERID="$(id -u):$(id -g)"
     PASSWD_OPT="-u ${USERID} -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro"
 else
@@ -774,8 +776,8 @@ case "$1" in
         -v ${DEPOT_DIR}/src:/home/${USER}/src \
         -v ${DEPOT_DIR}/opt/${NAME}:/opt -v ${PWD}:/data \
         --hostname ${NAME} --name ${NAME} \
-        -id metadium/bobthe:latest && \
-        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} && \
+        -id ${IMAGE} && \
+        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} $(id -ru) && \
         docker exec -it -u root ${NAME} service ssh start
     ;;
 "launch-host")
@@ -786,8 +788,8 @@ case "$1" in
         -v ${DEPOT_DIR}/src:/home/${USER}/src \
         -v ${DEPOT_DIR}/opt/${NAME}:/opt -v ${PWD}:/data \
         --hostname ${NAME} --name ${NAME} \
-        -id metadium/bobthe:latest && \
-        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} && \
+        -id ${IMAGE} && \
+        docker exec -it -u root ${NAME} /usr/local/bin/meta-start.sh setup-user ${USER} $(id -ru) && \
         docker exec -it -u root ${NAME} /bin/bash -c 'echo "127.0.0.1 '${NAME}'" >> /etc/hosts'
     if [ ! "$PORT" = "" ]; then
         docker exec -it -u root ${NAME} /bin/sed -ie 's/^#Port 22/Port '$(($PORT-1))'/' /etc/ssh/sshd_config && \
@@ -813,7 +815,7 @@ case "$1" in
     ;;
 "shell")
     [ $# -lt 2 ] && usage 1
-    docker exec -e TERM=xterm-256color -it -u ${USERID} -w /home/${USER} $2 /bin/bash
+    exec docker exec -e TERM=xterm-256color -it -u ${USERID} -w /home/${USER} $2 /bin/bash
     ;;
 *)
     usage 1
